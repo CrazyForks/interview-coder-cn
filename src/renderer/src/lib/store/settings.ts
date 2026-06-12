@@ -16,6 +16,8 @@ interface Settings {
   screenshotDir: string
 
   dashscopeApiKey: string
+
+  hideDockIcon: boolean
 }
 
 interface SettingsStore extends Settings {
@@ -36,7 +38,9 @@ const defaultSettings: Settings = {
   screenshotAutoSave: false,
   screenshotDir: '',
 
-  dashscopeApiKey: ''
+  dashscopeApiKey: '',
+
+  hideDockIcon: false
 }
 
 export const useSettingsStore = create<SettingsStore>()(

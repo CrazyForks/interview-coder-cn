@@ -17,6 +17,7 @@ import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useSettingsStore } from '@/lib/store/settings'
+import { isMac } from '@/lib/utils/env'
 import { SelectModel } from './SelectModel'
 import { SelectLanguage } from './SelectLanguage'
 import { CustomShortcuts, ResetDefaultShortcuts } from './CustomShortcuts'
@@ -32,6 +33,7 @@ export default function SettingsPage() {
     screenshotAutoSave,
     screenshotDir,
     dashscopeApiKey,
+    hideDockIcon,
     updateSetting
   } = useSettingsStore()
   const [showApiKey, setShowApiKey] = useState(false)
@@ -319,6 +321,21 @@ export default function SettingsPage() {
               此应用为本地应用，采集的图片直接上传到您配置的 OpenAI
               等大模型公司，不存在隐私泄露风险。
             </p>
+            {isMac && (
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  隐藏 Dock 图标
+                  <span className="ml-2 text-xs font-light">
+                    开启后不在程序坞和 Cmd+Tab 切换器中显示，仅可通过快捷键唤起窗口
+                  </span>
+                </label>
+                <Switch
+                  className="scale-y-90"
+                  checked={hideDockIcon}
+                  onCheckedChange={(checked) => updateSetting('hideDockIcon', checked)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

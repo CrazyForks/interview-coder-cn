@@ -1,7 +1,8 @@
 import { join } from 'node:path'
-import { shell, app, BrowserWindow } from 'electron'
+import { shell, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { settings, applyDockVisibility } from './settings'
 
 export function applyContentProtection(window: BrowserWindow, forceReset = false): void {
   if (!window || window.isDestroyed()) return
@@ -42,7 +43,7 @@ export function createWindow(): void {
     mainWindow.show()
     mainWindow.setAlwaysOnTop(true, 'screen-saver', 1)
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-    app.dock?.show()
+    applyDockVisibility(settings.hideDockIcon)
     applyContentProtection(mainWindow)
 
     // Reclaim top position when other apps steal it

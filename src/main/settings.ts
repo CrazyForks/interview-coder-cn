@@ -1,4 +1,4 @@
-import { dialog, ipcMain } from 'electron'
+import { app, dialog, ipcMain } from 'electron'
 
 ipcMain.handle('getAppSettings', () => {
   return settings
@@ -6,7 +6,20 @@ ipcMain.handle('getAppSettings', () => {
 
 ipcMain.handle('updateAppSettings', (_event, _settings) => {
   Object.assign(settings, _settings)
+  if ('hideDockIcon' in _settings) {
+    applyDockVisibility(settings.hideDockIcon)
+  }
 })
+
+/** Show/hide the macOS dock icon. No-op on other platforms. */
+export function applyDockVisibility(hidden: boolean): void {
+  if (process.platform !== 'darwin') return
+  if (hidden) {
+    app.dock?.hide()
+  } else {
+    app.dock?.show()
+  }
+}
 
 ipcMain.handle('selectScreenshotDir', async () => {
   const result = await dialog.showOpenDialog({
@@ -27,7 +40,8 @@ export const settings = {
   customPrompt: '',
   screenshotAutoSave: false,
   screenshotDir: '',
-  dashscopeApiKey: ''
+  dashscopeApiKey: '',
+  hideDockIcon: false
 }
 
 export type AppSettings = typeof settings
