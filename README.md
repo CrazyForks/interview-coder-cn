@@ -1,4 +1,4 @@
-# 编码面试解题助手
+# 编码面试解题助手 / 在线考试助手
 
 ![使用演示](https://github.com/user-attachments/assets/19781594-3108-4711-a54b-9d36496787bc)
 
