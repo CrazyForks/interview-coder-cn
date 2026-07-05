@@ -10,35 +10,56 @@ import {
   EyeOff,
   Keyboard,
   FolderOpen,
-  Mic
+  Mic,
+  Plus,
+  RotateCcw,
+  X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { useSettingsStore } from '@/lib/store/settings'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
+import { useSettingsStore, PRESET_SCENE_PROMPTS } from '@/lib/store/settings'
 import { isMac } from '@/lib/utils/env'
 import { SelectModel } from './SelectModel'
-import { SelectLanguage } from './SelectLanguage'
 import { CustomShortcuts, ResetDefaultShortcuts } from './CustomShortcuts'
 
 export default function SettingsPage() {
   const {
     opacity,
-    codeLanguage,
     apiBaseURL,
     apiKey,
     model,
-    customPrompt,
+    scenes,
+    activeSceneId,
     screenshotAutoSave,
     screenshotDir,
     dashscopeApiKey,
     hideDockIcon,
-    updateSetting
+    updateSetting,
+    setActiveScene,
+    updateScenePrompt,
+    addScene,
+    removeScene
   } = useSettingsStore()
   const [showApiKey, setShowApiKey] = useState(false)
   const [showDashscopeApiKey, setShowDashscopeApiKey] = useState(false)
-  const [enableCustomPrompt, setEnableCustomPrompt] = useState(customPrompt.trim().length > 0)
+  const [addSceneOpen, setAddSceneOpen] = useState(false)
+  const [newSceneName, setNewSceneName] = useState('')
+  const [sceneToDelete, setSceneToDelete] = useState<string | null>(null)
+
+  const activeScene = scenes.find((s) => s.id === activeSceneId)
+  const deletingScene = scenes.find((s) => s.id === sceneToDelete)
 
   useEffect(() => {
     return () => {
@@ -46,12 +67,17 @@ export default function SettingsPage() {
     }
   }, [])
 
-  const handleCustomPromptToggle = (checked: boolean) => {
-    setEnableCustomPrompt(checked)
-    if (!checked) {
-      // Clear the custom prompt when switch is turned off
-      updateSetting('customPrompt', '')
-    }
+  const handleAddScene = () => {
+    const name = newSceneName.trim()
+    if (!name) return
+    addScene(name)
+    setNewSceneName('')
+    setAddSceneOpen(false)
+  }
+
+  const handleResetScenePrompt = () => {
+    if (!activeScene?.isPreset) return
+    updateScenePrompt(activeScene.id, PRESET_SCENE_PROMPTS[activeScene.id] ?? '')
   }
 
   return (
@@ -181,45 +207,135 @@ export default function SettingsPage() {
           </h2>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div>
               <label className="text-sm font-medium">
-                自定义提示词
+                使用场景
                 <span className="ml-2 text-xs font-light">
-                  通过配置自定义提示词，可将应用能力快速扩展到编程以外的其他场景，用户也可以通过微调提示词来优化效果
+                  选择场景后可编辑对应的系统提示词，修改会自动保存；也可新增自己的场景
                 </span>
               </label>
-              <Switch
-                className="scale-y-90"
-                checked={enableCustomPrompt}
-                onCheckedChange={handleCustomPromptToggle}
-              />
-            </div>
-            {enableCustomPrompt ? (
-              <div className="-mt-2">
-                <Textarea
-                  value={customPrompt}
-                  onChange={(e) => updateSetting('customPrompt', e.target.value)}
-                  placeholder="请输入自定义的提示词内容, 示例: 你是一个编程助手, 请根据「截图」和「语音转录内容」给出相关回答。"
-                  className="w-full min-h-24 bg-white"
-                  rows={4}
-                />
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {scenes.map((scene) => (
+                  <div
+                    key={scene.id}
+                    className={cn(
+                      'group flex items-center rounded-full border text-sm transition-colors cursor-pointer select-none',
+                      scene.id === activeSceneId
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-gray-300 hover:border-blue-400'
+                    )}
+                    onClick={() => setActiveScene(scene.id)}
+                  >
+                    <span className={cn('py-1 pl-3', scene.isPreset ? 'pr-3' : 'pr-1')}>
+                      {scene.name}
+                    </span>
+                    {!scene.isPreset && (
+                      <button
+                        className="mr-1.5 p-0.5 rounded-full opacity-60 hover:opacity-100 hover:bg-black/10"
+                        title="删除该场景"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSceneToDelete(scene.id)
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  className="flex items-center gap-1 rounded-full border border-dashed border-gray-400 bg-transparent px-3 py-1 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+                  onClick={() => setAddSceneOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  新增场景
+                </button>
               </div>
-            ) : (
-              <div
-                className={`flex items-center justify-between ${enableCustomPrompt ? ' opacity-40 pointer-events-none' : ''}`}
-              >
-                <label className="text-sm font-medium">
-                  编程语言
-                  <span className="ml-2 text-xs font-light">启用自定义提示词后，该选项失效</span>
-                </label>
-                <SelectLanguage
-                  value={codeLanguage}
-                  onChange={(value) => updateSetting('codeLanguage', value)}
+            </div>
+
+            {activeScene && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium">
+                    系统提示词
+                    <span className="ml-2 text-xs font-light">「{activeScene.name}」场景</span>
+                  </label>
+                  {activeScene.isPreset && (
+                    <button
+                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 transition-colors"
+                      title="恢复该场景的默认提示词"
+                      onClick={handleResetScenePrompt}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      恢复默认
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  value={activeScene.prompt}
+                  onChange={(e) => updateScenePrompt(activeScene.id, e.target.value)}
+                  placeholder="请输入该场景的系统提示词, 示例: 你是一个编程助手, 请根据「截图」和「语音转录内容」给出相关回答。"
+                  className="w-full min-h-24 max-h-100 bg-white"
+                  rows={6}
                 />
               </div>
             )}
           </div>
         </div>
+
+        {/* Add scene dialog */}
+        <Dialog open={addSceneOpen} onOpenChange={setAddSceneOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>新增场景</DialogTitle>
+              <DialogDescription>创建后可为该场景编写专属的系统提示词</DialogDescription>
+            </DialogHeader>
+            <Input
+              value={newSceneName}
+              onChange={(e) => setNewSceneName(e.target.value)}
+              placeholder="场景名称，如：数学考试"
+              maxLength={20}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddScene()
+              }}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddSceneOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={handleAddScene} disabled={!newSceneName.trim()}>
+                创建
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete scene confirm dialog */}
+        <Dialog open={!!sceneToDelete} onOpenChange={(open) => !open && setSceneToDelete(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>删除场景</DialogTitle>
+              <DialogDescription>
+                确定删除场景「{deletingScene?.name}」吗？其提示词内容将一并删除，且无法恢复。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSceneToDelete(null)}>
+                取消
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (sceneToDelete) removeScene(sceneToDelete)
+                  setSceneToDelete(null)
+                }}
+              >
+                删除
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Appearance Settings */}
         <div className="bg-gray-300/80 rounded-lg p-6">

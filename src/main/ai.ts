@@ -1,10 +1,12 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { streamText, type ModelMessage } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { settings, AppSettings } from './settings'
 
-export const PROMPT_SYSTEM = readFileSync(join(import.meta.dirname, 'prompts.md'), 'utf-8').trim()
+// The system prompt is fully managed by the renderer (prompt scenes in the
+// settings store) and synced here via updateAppSettings on app startup
+function getSystemPrompt(extra?: string) {
+  return [settings.customPrompt, extra].filter(Boolean).join('\n\n') || undefined
+}
 
 function getModel(_settings: AppSettings) {
   const fallbackModel = settings.apiBaseURL.includes('siliconflow')
@@ -21,8 +23,7 @@ export function getSolutionStream(messages: ModelMessage[], abortSignal?: AbortS
 
   const { textStream } = streamText({
     model: openai.chat(getModel(settings)),
-    system:
-      settings.customPrompt || PROMPT_SYSTEM + `\n使用编程语言：${settings.codeLanguage} 解答。`,
+    system: getSystemPrompt(),
     messages,
     abortSignal,
     onError: (err) => {
@@ -58,8 +59,7 @@ export function getFollowUpStream(
 
   const { textStream } = streamText({
     model: openai.chat(getModel(settings)),
-    system:
-      settings.customPrompt || PROMPT_SYSTEM + `\n使用编程语言：${settings.codeLanguage} 解答。`,
+    system: getSystemPrompt(),
     messages: updatedMessages,
     abortSignal,
     onError: (err) => {
@@ -77,10 +77,9 @@ export function getGeneralStream(messages: ModelMessage[], abortSignal?: AbortSi
 
   const { textStream } = streamText({
     model: openai.chat(getModel(settings)),
-    system:
-      settings.customPrompt ||
-      PROMPT_SYSTEM +
-        `\n使用编程语言：${settings.codeLanguage} 解答。\n\n注意：如果有多张截图，请结合所有截图内容进行完整分析，不要遗漏任何部分。`,
+    system: getSystemPrompt(
+      '注意：如果有多张截图，请结合所有截图内容进行完整分析，不要遗漏任何部分。'
+    ),
     messages,
     abortSignal,
     onError: (err) => {

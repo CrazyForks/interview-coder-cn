@@ -40,7 +40,6 @@ src/
 │   ├── take-screenshot.ts   # desktopCapturer → base64 PNG
 │   ├── transcription.ts     # DashScope WebSocket real-time speech-to-text
 │   ├── auto-updater.ts      # electron-updater (non-macOS only)
-│   ├── prompts.md           # System prompt for AI (copied to build output via vite-plugin-static-copy)
 │   └── index.d.ts           # global.mainWindow type declaration
 ├── preload/
 │   ├── index.ts             # contextBridge API: exposes window.api to renderer
@@ -59,7 +58,6 @@ src/
         │   └── PrerequisitesChecker.tsx  # Modal for API key setup
         ├── settings/         # Settings page
         │   ├── index.tsx     # AI config, coding, appearance, shortcuts, privacy
-        │   ├── SelectLanguage.tsx  # Combobox with custom language input
         │   ├── SelectModel.tsx     # Combobox with custom model input
         │   └── CustomShortcuts.tsx # Shortcut key recorder
         ├── help/             # Help page
@@ -74,7 +72,7 @@ src/
         ├── lib/
         │   ├── store/        # Zustand stores
         │   │   ├── app.ts       # ignoreMouse state, synced from main process
-        │   │   ├── settings.ts  # API config, model, language, opacity (persisted v4)
+        │   │   ├── settings.ts  # API config, model, prompt scenes, opacity (persisted v6)
         │   │   ├── shortcuts.ts # Shortcut bindings (persisted v5, with migration)
         │   │   ├── solution.ts  # Loading state, solution chunks, screenshots, errors
         │   │   └── transcription.ts # Transcription state: isTranscribing, text, error
@@ -155,7 +153,7 @@ src/
 
 | Store | File | Persisted | Key State |
 |-------|------|-----------|-----------|
-| `useSettingsStore` | `lib/store/settings.ts` | Yes (v4) | `apiBaseURL`, `apiKey`, `model`, `customModels`, `codeLanguage`, `opacity`, `customPrompt`, `dashscopeApiKey` |
+| `useSettingsStore` | `lib/store/settings.ts` | Yes (v6) | `apiBaseURL`, `apiKey`, `model`, `customModels`, `scenes` (prompt scenes), `activeSceneId`, `customPrompt` (derived from active scene), `opacity`, `dashscopeApiKey` |
 | `useShortcutsStore` | `lib/store/shortcuts.ts` | Yes (v5) | `shortcuts` (action → key mapping with categories) |
 | `useSolutionStore` | `lib/store/solution.ts` | No | `isLoading`, `solutionChunks`, `screenshotData`, `errorMessage` |
 | `useTranscriptionStore` | `lib/store/transcription.ts` | No | `isTranscribing`, `transcriptionText`, `errorMessage` |
@@ -179,7 +177,7 @@ The app is designed to be invisible to screen-sharing software:
 - All AI calls go through `src/main/ai.ts` using Vercel AI SDK's `streamText()`
 - Provider: `@ai-sdk/openai` with custom `baseURL` (works with any OpenAI-compatible API)
 - Model fallback: `Qwen/Qwen3-VL-32B-Instruct` for SiliconFlow, `gpt-5-mini` otherwise
-- System prompt is loaded from `prompts.md` at build time (bundled via `vite-plugin-static-copy`)
+- System prompts are maintained in the renderer settings store (`PRESET_SCENE_PROMPTS` in `lib/store/settings.ts`) as "prompt scenes"; the active scene's prompt is synced to the main process as `customPrompt`
 - Three streaming functions: `getSolutionStream` (first screenshot), `getFollowUpStream` (follow-up), `getGeneralStream` (multi-screenshot)
 - Conversation history (`conversationMessages`) is maintained in `shortcuts.ts` as `ModelMessage[]`
 
@@ -258,7 +256,7 @@ These are read by dotenv in the main process and merged with renderer-side setti
 
 1. **Three TypeScript configs**: `tsconfig.node.json` (main + preload), `tsconfig.web.json` (renderer). The root `tsconfig.json` is a project references file only.
 
-2. **`prompts.md` is bundled**: It lives in `src/main/` but gets copied to the build output via `vite-plugin-static-copy`. Loaded at runtime with `readFileSync(join(import.meta.dirname, 'prompts.md'))`.
+2. **System prompts live in the renderer**: All preset scene prompts are defined in `src/renderer/src/lib/store/settings.ts` (`PRESET_SCENE_PROMPTS`). The main process only consumes the synced `customPrompt` and has no built-in prompt of its own.
 
 3. **`global.mainWindow`**: The main window reference is stored as a global variable, declared in `src/main/index.d.ts`.
 
