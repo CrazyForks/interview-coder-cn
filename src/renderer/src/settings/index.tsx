@@ -274,7 +274,7 @@ export default function SettingsPage() {
                 <Textarea
                   value={activeScene.prompt}
                   onChange={(e) => updateScenePrompt(activeScene.id, e.target.value)}
-                  placeholder="请输入该场景的系统提示词, 示例: 你是一个编程助手, 请根据「截图」和「语音转录内容」给出相关回答。"
+                  placeholder="请输入该场景的系统提示词, 示例: 你是一个解题助手, 请根据「截图」和「语音转录内容」给出相关回答。"
                   className="w-full min-h-24 max-h-100 bg-white"
                   rows={6}
                 />

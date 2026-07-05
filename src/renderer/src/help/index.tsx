@@ -35,8 +35,8 @@ export default function HelpPage() {
         {/* Introduction */}
         <HelpSection Icon={Info} title="简介">
           <p className="text-gray-700">
-            欢迎使用解题助手！针对 编码笔试 / 面试
-            场景，该工具可以帮助您快速截图，分析屏幕内容，并给出解题建议。 您可以访问本项目{' '}
+            欢迎使用截屏解题助手！无论是 编程面试 / 在线考试 还是其他解题场景，
+            该工具都可以帮助您快速截图，分析屏幕内容，并给出解答建议。 您可以访问本项目{' '}
             <a
               href="https://github.com/ooboqoo/interview-coder-cn/wiki"
               target="_blank"
@@ -83,7 +83,7 @@ export default function HelpPage() {
           <div className="border border-gray-400 rounded-lg p-4">
             <h3 className="font-semibold mb-2">2. 查看结果</h3>
             <p className="text-sm text-gray-700">
-              截图完成后，系统会自动分析内容并提供相关的解题思路和代码。
+              截图完成后，系统会根据当前选择的提示词场景自动分析内容，给出解题思路和答案。
             </p>
           </div>
         </HelpSection>

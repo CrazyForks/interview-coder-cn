@@ -1,7 +1,7 @@
 {
   "name": "interview-coder-cn",
   "version": "1.8.0",
-  "description": "编码面试解题助手，实时截屏并生成解题思路和答案",
+  "description": "截屏解题助手，实时截屏并生成解题思路和答案",
   "main": "./out/main/index.js",
   "scripts": {
     "format": "prettier --write .",
@@ -25,7 +25,8 @@
   "keywords": [
     "解题助手",
     "面试",
-    "助手",
+    "在线考试",
+    "截屏",
     "coding interview",
     "LeetCode"
   ],
