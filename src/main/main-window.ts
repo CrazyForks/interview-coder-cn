@@ -2,7 +2,6 @@ import { join } from 'node:path'
 import { shell, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { settings, applyDockVisibility } from './settings'
 
 export function applyContentProtection(window: BrowserWindow, forceReset = false): void {
   if (!window || window.isDestroyed()) return
@@ -43,7 +42,8 @@ export function createWindow(): void {
     mainWindow.show()
     mainWindow.setAlwaysOnTop(true, 'screen-saver', 1)
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-    applyDockVisibility(settings.hideDockIcon)
+    // Dock visibility is handled at startup (index.ts) and via renderer sync
+    // (settings.ts); the window's own show event must not force it back on.
     applyContentProtection(mainWindow)
 
     // Reclaim top position when other apps steal it

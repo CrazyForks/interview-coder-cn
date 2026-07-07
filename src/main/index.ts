@@ -31,6 +31,7 @@ import './shortcuts'
 import './transcription'
 import { createWindow } from './main-window'
 import { initAutoUpdater } from './auto-updater'
+import { applyDockVisibility } from './settings'
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -38,6 +39,13 @@ import { initAutoUpdater } from './auto-updater'
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  // Hide the dock icon up front until the renderer syncs the real preference.
+  // The persisted `hideDockIcon` value lives in the renderer, so the main
+  // process doesn't know it yet at startup. Starting hidden avoids a dock
+  // flash for users who keep it hidden; if disabled, the renderer sync will
+  // show it again once the window mounts.
+  applyDockVisibility(true)
 
   // Auto-approve getDisplayMedia for system audio loopback capture
   session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
