@@ -68,6 +68,9 @@ interface Settings {
   dashscopeApiKey: string
 
   hideDockIcon: boolean
+
+  audioInputDeviceId: string
+  audioOutputDeviceId: string
 }
 
 interface SettingsStore extends Settings {
@@ -95,7 +98,10 @@ const defaultSettings: Settings = {
 
   dashscopeApiKey: '',
 
-  hideDockIcon: false
+  hideDockIcon: false,
+
+  audioInputDeviceId: '',
+  audioOutputDeviceId: ''
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -151,7 +157,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'interview-coder-settings',
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         const state = persisted as Partial<Settings>
         // Drop the legacy codeLanguage field (language now lives in the prompt text)

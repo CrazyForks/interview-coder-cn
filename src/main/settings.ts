@@ -40,7 +40,9 @@ export const settings = {
   screenshotAutoSave: false,
   screenshotDir: '',
   dashscopeApiKey: '',
-  hideDockIcon: false
+  hideDockIcon: false,
+  audioInputDeviceId: '',
+  audioOutputDeviceId: ''
 }
 
 export type AppSettings = typeof settings
