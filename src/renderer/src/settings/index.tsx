@@ -33,6 +33,13 @@ import { useSettingsStore, PRESET_SCENE_PROMPTS } from '@/lib/store/settings'
 import { isMac } from '@/lib/utils/env'
 import { SelectModel } from './SelectModel'
 import { CustomShortcuts, ResetDefaultShortcuts } from './CustomShortcuts'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 export default function SettingsPage() {
   const {
@@ -45,6 +52,8 @@ export default function SettingsPage() {
     screenshotAutoSave,
     screenshotDir,
     dashscopeApiKey,
+    audioInputDeviceId,
+    audioOutputDeviceId,
     hideDockIcon,
     updateSetting,
     setActiveScene,
@@ -58,6 +67,8 @@ export default function SettingsPage() {
   const [newSceneName, setNewSceneName] = useState('')
   const [sceneToDelete, setSceneToDelete] = useState<string | null>(null)
 
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
+
   const activeScene = scenes.find((s) => s.id === activeSceneId)
   const deletingScene = scenes.find((s) => s.id === sceneToDelete)
 
@@ -65,6 +76,23 @@ export default function SettingsPage() {
     return () => {
       document.body.style.opacity = ''
     }
+  }, [])
+
+  useEffect(() => {
+    const loadDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const needsPermission = devices.every((d) => !d.label)
+        if (needsPermission) {
+          await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        }
+        const refreshed = await navigator.mediaDevices.enumerateDevices()
+        setAudioDevices(refreshed)
+      } catch (err) {
+        console.error('Failed to enumerate audio devices:', err)
+      }
+    }
+    loadDevices()
   }, [])
 
   const handleAddScene = () => {
@@ -197,6 +225,60 @@ export default function SettingsPage() {
                   )}
                 </Button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                音频输入设备
+                <span className="ml-2 text-xs font-light">选择麦克风，留空则捕获系统音频</span>
+              </label>
+              <Select
+                value={audioInputDeviceId || 'system'}
+                onValueChange={(val) =>
+                  updateSetting('audioInputDeviceId', val === 'system' ? '' : val)
+                }
+              >
+                <SelectTrigger className="w-60 bg-white">
+                  <SelectValue placeholder="系统音频（默认）" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="system">系统音频（默认）</SelectItem>
+                  {audioDevices
+                    .filter((d) => d.kind === 'audioinput')
+                    .map((d) => (
+                      <SelectItem key={d.deviceId} value={d.deviceId}>
+                        {d.label || d.deviceId}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                音频输出设备
+                <span className="ml-2 text-xs font-light">用于转录时的监听输出</span>
+              </label>
+              <Select
+                value={audioOutputDeviceId || 'default'}
+                onValueChange={(val) =>
+                  updateSetting('audioOutputDeviceId', val === 'default' ? '' : val)
+                }
+              >
+                <SelectTrigger className="w-60 bg-white">
+                  <SelectValue placeholder="默认设备" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">默认设备</SelectItem>
+                  {audioDevices
+                    .filter((d) => d.kind === 'audiooutput')
+                    .map((d) => (
+                      <SelectItem key={d.deviceId} value={d.deviceId}>
+                        {d.label || d.deviceId}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
